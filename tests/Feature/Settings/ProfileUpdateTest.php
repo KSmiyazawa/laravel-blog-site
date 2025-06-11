@@ -19,9 +19,10 @@ test('profile information can be updated', function () {
 
     $response = $this
         ->actingAs($user)
+        ->from('/settings/profile')
         ->patch('/settings/profile', [
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'username' => 'newusername',
         ]);
 
     $response
@@ -31,25 +32,29 @@ test('profile information can be updated', function () {
     $user->refresh();
 
     expect($user->name)->toBe('Test User');
-    expect($user->email)->toBe('test@example.com');
-    expect($user->email_verified_at)->toBeNull();
+    expect($user->username)->toBe('newusername');
 });
 
-test('email verification status is unchanged when the email address is unchanged', function () {
+test('username must be unique', function () {
+    $existingUser = User::factory()->create([
+        'username' => 'existinguser'
+    ]);
+    
     $user = User::factory()->create();
 
     $response = $this
         ->actingAs($user)
+        ->from('/settings/profile')
         ->patch('/settings/profile', [
             'name' => 'Test User',
-            'email' => $user->email,
+            'username' => 'existinguser',
         ]);
 
     $response
-        ->assertSessionHasNoErrors()
+        ->assertSessionHasErrors('username')
         ->assertRedirect('/settings/profile');
 
-    expect($user->refresh()->email_verified_at)->not->toBeNull();
+    expect($user->refresh()->username)->not->toBe('existinguser');
 });
 
 test('user can delete their account', function () {
@@ -57,6 +62,7 @@ test('user can delete their account', function () {
 
     $response = $this
         ->actingAs($user)
+        ->from('/settings/profile')
         ->delete('/settings/profile', [
             'password' => 'password',
         ]);
