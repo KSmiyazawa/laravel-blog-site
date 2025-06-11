@@ -15,9 +15,12 @@ test('confirm password screen can be rendered', function () {
 test('password can be confirmed', function () {
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user)->post('/confirm-password', [
-        'password' => 'password',
-    ]);
+    $response = $this
+        ->actingAs($user)
+        ->from('/confirm-password')
+        ->post('/confirm-password', [
+            'password' => 'password',
+        ]);
 
     $response->assertRedirect();
     $response->assertSessionHasNoErrors();
@@ -26,9 +29,12 @@ test('password can be confirmed', function () {
 test('password is not confirmed with invalid password', function () {
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user)->post('/confirm-password', [
-        'password' => 'wrong-password',
-    ]);
+    $response = $this
+        ->actingAs($user)
+        ->from('/confirm-password')
+        ->post('/confirm-password', [
+            'password' => 'wrong-password',
+        ]);
 
     $response->assertSessionHasErrors();
 });
