@@ -5,6 +5,8 @@ namespace Database\Factories;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -53,8 +55,16 @@ class PostFactory extends Factory
      */
     public function withFeaturedImage(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'featured_image' => 'posts/' . fake()->uuid() . '.jpg',
-        ]);
+        return $this->state(function (array $attributes) {
+            // Create a fake image
+            $image = UploadedFile::fake()->image('post.jpg', 800, 600);
+            
+            // Store the image in the public disk
+            $path = $image->store('posts', 'public');
+            
+            return [
+                'featured_image' => $path,
+            ];
+        });
     }
 } 
