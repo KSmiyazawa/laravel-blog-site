@@ -10,16 +10,10 @@ export interface BreadcrumbItem {
     href: string;
 }
 
-export interface NavGroup {
-    title: string;
-    items: NavItem[];
-}
-
 export interface NavItem {
     title: string;
     href: string;
     icon?: LucideIcon | null;
-    isActive?: boolean;
 }
 
 export interface SharedData {
@@ -27,7 +21,6 @@ export interface SharedData {
     quote: { message: string; author: string };
     auth: Auth;
     ziggy: Config & { location: string };
-    sidebarOpen: boolean;
     [key: string]: unknown;
 }
 

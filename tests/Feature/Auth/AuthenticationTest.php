@@ -1,6 +1,9 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\URL;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
@@ -19,13 +22,13 @@ test('users can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('posts.index'));
 });
 
 test('users can not authenticate with invalid password', function () {
     $user = User::factory()->create();
 
-    $this->post('/login', [
+    $response = $this->post('/login', [
         'username' => $user->username,
         'password' => 'wrong-password',
     ]);
@@ -34,9 +37,7 @@ test('users can not authenticate with invalid password', function () {
 });
 
 test('users can not authenticate with invalid username', function () {
-    $user = User::factory()->create();
-
-    $this->post('/login', [
+    $response = $this->post('/login', [
         'username' => 'wrong-username',
         'password' => 'password',
     ]);
