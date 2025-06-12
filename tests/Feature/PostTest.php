@@ -200,4 +200,33 @@ test('post deletion requires authentication', function () {
     $response = $this->delete(route('posts.destroy', $post));
 
     $response->assertRedirect(route('login'));
+});
+
+test('unauthenticated user can view posts index page', function () {
+    $user = User::factory()->create();
+    $posts = Post::factory()->count(3)->create(['user_id' => $user->id]);
+
+    $response = $this->get(route('posts.index'));
+
+    $response->assertInertia(fn ($assert) => $assert
+        ->component('posts/list')
+        ->has('posts', 3)
+        ->where('posts.0.title', $posts[0]->title)
+        ->where('posts.1.title', $posts[1]->title)
+        ->where('posts.2.title', $posts[2]->title)
+    );
+});
+
+test('unauthenticated user can view post detail page', function () {
+    $user = User::factory()->create();
+    $post = Post::factory()->create(['user_id' => $user->id]);
+
+    $response = $this->get(route('posts.show', $post));
+
+    $response->assertInertia(fn ($assert) => $assert
+        ->component('posts/show')
+        ->where('post.title', $post->title)
+        ->where('post.content', $post->content)
+        ->where('canEdit', false)
+    );
 }); 
