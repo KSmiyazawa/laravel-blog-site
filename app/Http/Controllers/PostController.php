@@ -23,7 +23,7 @@ class PostController extends BaseController
 
     public function __construct()
     {
-        $this->middleware('auth')->except(['list', 'detail']);
+        $this->middleware('auth')->except(['index', 'show']);
     }
 
     public function index(): Response
