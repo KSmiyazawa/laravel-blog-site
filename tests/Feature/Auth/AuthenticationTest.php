@@ -28,7 +28,7 @@ test('users can authenticate using the login screen', function () {
 test('users can not authenticate with invalid password', function () {
     $user = User::factory()->create();
 
-    $response = $this->post('/login', [
+    $this->post('/login', [
         'username' => $user->username,
         'password' => 'wrong-password',
     ]);
@@ -37,7 +37,7 @@ test('users can not authenticate with invalid password', function () {
 });
 
 test('users can not authenticate with invalid username', function () {
-    $response = $this->post('/login', [
+    $this->post('/login', [
         'username' => 'wrong-username',
         'password' => 'password',
     ]);
