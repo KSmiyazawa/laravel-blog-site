@@ -21,12 +21,19 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
 
+        /**
+         * Rate-limits login attempts to prevent brute-force attacks.
+         * Allows 5 login attempts per minute, per username + IP address.
+         */
         RateLimiter::for('login', function (Request $request) {
             $username = (string) $request->username;
             return Limit::perMinute(5)->by($username.$request->ip());
         });
 
-        // Redirect to posts after login
+        /**
+         * Custom login authentication logic using `username` instead of `email`.
+         * This overrides Fortify's default behavior to match the app's auth flow.
+         */
         Fortify::authenticateUsing(function (Request $request) {
             $user = config('fortify.model')::where('username', $request->username)->first();
 
@@ -35,7 +42,9 @@ class FortifyServiceProvider extends ServiceProvider
             }
         });
 
-        // Redirect to posts after registration
+        /**
+         * These specify the frontend views Fortify should use for registration and login.
+         */
         Fortify::registerView(function () {
             return inertia('auth/register');
         });
