@@ -40,17 +40,6 @@ class PostFactory extends Factory
     }
 
     /**
-     * Indicate that the post is published.
-     */
-    public function published(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'is_published' => true,
-            'published_at' => now(),
-        ]);
-    }
-
-    /**
      * Indicate that the post has a featured image.
      */
     public function withFeaturedImage(): static
