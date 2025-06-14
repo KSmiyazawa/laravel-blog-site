@@ -28,16 +28,6 @@ class PostRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string'],
             'featured_image' => ['nullable', 'image', 'max:2048'], // 2MB max
-            'is_published' => ['boolean'],
-            'published_at' => ['nullable', 'date'],
         ];
-    }
-
-    protected function prepareForValidation(): void
-    {
-        $this->merge([
-            'slug' => Str::slug($this->title),
-            'user_id' => auth()->id(),
-        ]);
     }
 }

@@ -23,11 +23,17 @@ class PostController extends BaseController
 
     public function __construct()
     {
+        // Only allow logged-in users to access create/edit/delete routes
+        // Public can only view the post list and post detail pages
         $this->middleware('auth')->except(['index', 'show']);
     }
 
+    /**
+     * Show a list of all posts.
+     */
     public function index(): Response
     {
+        // Get all posts sorted by latest
         $posts = Post::with('user')
             ->latest()
             ->get();
@@ -37,92 +43,113 @@ class PostController extends BaseController
         ]);
     }
 
+    /**
+     * Show the form for creating a new post.
+     */
     public function create(): Response
     {
         return Inertia::render('posts/create');
     }
 
-    protected function generateUniqueSlug(string $title): string
-    {
-        $slug = Str::slug($title);
-        $count = 1;
-        $originalSlug = $slug;
-
-        while (Post::where('slug', $slug)->exists()) {
-            $slug = $originalSlug . '-' . $count;
-            $count++;
-        }
-
-        return $slug;
-    }
-
+    /**
+     * Store a new post.
+     */
     public function store(PostRequest $request): RedirectResponse
     {
+        // Validate the request data
         $data = $request->validated();
+
+        // Add the logged-in user's ID and generate a unique slug
         $data['user_id'] = auth()->id();
-        $data['slug'] = $this->generateUniqueSlug($data['title']);
-        
+        $data['slug'] = Post::generateUniqueSlug($data['title']);
+
+        // Create the post
         $post = Post::create($data);
 
-        if ($request->hasFile('featured_image')) {
-            $post->featured_image = $request->file('featured_image')->store('posts', 'public');
-            $post->save();
-        }
+        // Handle featured image upload
+        $this->handleImageUpload($request, $post);
 
+        // Redirect to the post detail page
         return redirect()->route('posts.show', ['post' => $post->slug]);
     }
 
+    /**
+     * Show a single post.
+     */
     public function show(Post $post): Response
     {
+        // Check if the current user is the owner of the post
         $canEdit = auth()->check() && auth()->id() === $post->user_id;
+
         return Inertia::render('posts/show', [
             'post' => $post->load('user'),
-            'canEdit' => $canEdit,
+            'canEdit' => $canEdit, // Send permission info to frontend
         ]);
     }
 
+    /**
+     * Show the form for editing an existing post.
+     */
     public function edit(Post $post): Response
     {
+        // Ensure only the post owner can access this page
         $this->authorize('update', $post);
         return Inertia::render('posts/edit', [
             'post' => $post->load('user'),
         ]);
     }
 
+    /**
+     * Update an existing post.
+     */
     public function update(PostRequest $request, Post $post): RedirectResponse
     {
+        // Ensure only the post owner can update it
         $this->authorize('update', $post);
-        
-        $data = $request->validated();
-        
-        if ($post->title !== $data['title']) {
-            $data['slug'] = $this->generateUniqueSlug($data['title']);
-        }
 
-        // Remove featured_image from data if no new image was uploaded
-        if (!isset($data['featured_image'])) {
-            unset($data['featured_image']);
+        // Validate the request data
+        $data = $request->validated();
+
+        // If the title has changed, generate a new unique slug
+        if ($post->title !== $data['title']) {
+            $data['slug'] = Post::generateUniqueSlug($data['title']);
         }
 
         $post->update($data);
 
-        if ($request->hasFile('featured_image')) {
-            // Delete the old image if it exists
-            if ($post->featured_image) {
-                Storage::disk('public')->delete($post->featured_image);
-            }
-            
-            $post->featured_image = $request->file('featured_image')->store('posts', 'public');
-            $post->save();
-        }
+        // Handle featured image upload
+        $this->handleImageUpload($request, $post);
 
+        // Redirect to the post detail page
         return redirect()->route('posts.show', ['post' => $post->slug]);
     }
 
+    /**
+     * Delete a post.
+     */
     public function destroy(Post $post): RedirectResponse
     {
+        // Ensure only the post owner can delete it
         $this->authorize('delete', $post);
+
         $post->delete();
+
+        // Redirect to the post list page
         return redirect()->route('posts.index');
+    }
+
+    /**
+     * Handle featured image upload and replacement.
+     */
+    private function handleImageUpload(PostRequest $request, Post $post): void
+    {
+        if ($request->hasFile('featured_image')) {
+            if ($post->featured_image) {
+                Storage::disk('public')->delete($post->featured_image);
+            }
+
+            $path = $request->file('featured_image')->store('posts', 'public');
+            $post->update(['featured_image' => $path]);
+        }
     }
 }
